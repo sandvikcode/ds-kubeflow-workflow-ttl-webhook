@@ -15,8 +15,6 @@ import (
 // Mutate mutates
 func Mutate(body []byte) ([]byte, error) {
 
-	log.Printf("recv: %s\n", string(body))
-
 	// unmarshal request into AdmissionReview struct
 	admReview := v1beta1.AdmissionReview{}
 	if err := json.Unmarshal(body, &admReview); err != nil {
@@ -24,7 +22,6 @@ func Mutate(body []byte) ([]byte, error) {
 	}
 
 	var err error
-	//var pod *corev1.Pod
 	var workflow *argo.Workflow
 
 	responseBody := []byte{}
@@ -36,7 +33,6 @@ func Mutate(body []byte) ([]byte, error) {
 		if err := json.Unmarshal(ar.Object.Raw, &workflow); err != nil {
 			return nil, fmt.Errorf("unable unmarshal poworkflow json object %v", err)
 		}
-
 		// get the Pod object and unmarshal it into its struct, if we cannot, we might as well stop here
 		/*
 			if err := json.Unmarshal(ar.Object.Raw, &pod); err != nil {
@@ -57,12 +53,27 @@ func Mutate(body []byte) ([]byte, error) {
 		// the actual mutation is done by a string in JSONPatch style, i.e. we don't _actually_ modify the object, but
 		// tell K8S how it should modifiy it
 		p := []map[string]interface{}{}
-		patch := map[string]interface{}{
-			"op":    "add",
-			"path":  fmt.Sprintf("/spec/ttlSecondsAfterFinished"),
-			"value": 100,
+
+		if workflow.Spec.TTLSecondsAfterFinished == nil {
+			log.Println("There are no TTLSecondsAfterFinished value set, setting it to 36000s")
+			patch := map[string]interface{}{
+				"op":    "add",
+				"path":  fmt.Sprintf("/spec/ttlSecondsAfterFinished"),
+				"value": 60 * 20 * 30,
+			}
+			p = append(p, patch)
+		} else {
+			if *workflow.Spec.TTLSecondsAfterFinished > int32(86400) {
+				log.Println("The value of TTLSecondsAfterFinished is to large, setting it to")
+				patch := map[string]interface{}{
+					"op":    "replace",
+					"path":  fmt.Sprintf("/spec/ttlSecondsAfterFinished"),
+					"value": 60 * 20 * 30,
+				}
+				p = append(p, patch)
+			}
+			log.Println("The value is fine, not changing it")
 		}
-		p = append(p, patch)
 
 		// parse the []map into JSON
 		resp.Patch, err = json.Marshal(p)

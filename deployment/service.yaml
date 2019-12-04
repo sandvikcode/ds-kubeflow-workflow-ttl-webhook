@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: kubeflow-workflow-ttl
+  name: mutateme
+  labels:
+    app: mutateme
+spec:
+  publishNotReadyAddresses: true
+  ports:
+    - port: 443 # The port which the sevice expect the incommig trafic. A serivce can use the 0-1000 range a pod/container is often forbidden. 
+      targetPort: 8443 # The incomming trafic will be forwarded to the pod on the "targetPort".  
+  selector:
+    app: mutateme

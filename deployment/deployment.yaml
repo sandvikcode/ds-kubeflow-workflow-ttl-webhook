@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: kubeflow-workflow-ttl
+  name: mutateme
+  labels:
+    app: mutateme
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mutateme
+  template:
+    metadata:
+      name: mutateme
+      labels:
+        app: mutateme
+    spec:
+      volumes:
+        - name: tls-secret-volume
+          secret:
+            secretName: tls-secret
+      containers:
+        - name: mutator
+          image: gcr.io/ds-production-259110/mutatingadmissiongwebhook:latest
+          imagePullPolicy: Always
+          # command -> entrypoint in docker
+          # args -> cmd in docker
+          resources:
+            limits:
+              cpu: 500m
+              memory: 128Mi
+            requests:
+              cpu: 250m
+              memory: 64Mi
+          volumeMounts:
+            - name: tls-secret-volume
+              mountPath: "/etc/tls-secret"
+              readOnly: true

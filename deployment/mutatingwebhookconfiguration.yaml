@@ -1,0 +1,23 @@
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: mutateme
+  labels:
+    app: mutateme
+webhooks:
+  - name: mutateme.kubeflow-workflow-ttl.svc.cluster.local
+    clientConfig:
+      caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURERENDQWZTZ0F3SUJBZ0lSQUpJM09heWUwUVNSNkkramt1eGZqK2N3RFFZSktvWklodmNOQVFFTEJRQXcKTHpFdE1Dc0dBMVVFQXhNa05qWm1ZV000WkdJdE0ySTVNQzAwTWpsaExXSTBNekF0TkRnelpqa3haalJqT0dZMwpNQjRYRFRFNU1URXlNREUxTlRrek4xb1hEVEkwTVRFeE9ERTJOVGt6TjFvd0x6RXRNQ3NHQTFVRUF4TWtOalptCllXTTRaR0l0TTJJNU1DMDBNamxoTFdJME16QXRORGd6WmpreFpqUmpPR1kzTUlJQklqQU5CZ2txaGtpRzl3MEIKQVFFRkFBT0NBUThBTUlJQkNnS0NBUUVBc1ViVmhXbnArYWFpelFtQlZ0UnBLZXJYRHVoZzRRUmtzTW14RnpRMQpnNHFDeCtSdWlzSVVLeHY5NFl4amhjaEp4dStqRVRSSGxkMjJOeHBrVTlGOEMxd0drWjFGU3ZZMWwrenVKYlRqClVRQ1I0c3pGNnd1TzFkQjkwekZYRXFOV3JhaERiVFd0QlNzYjMrTVdObjhrSGkxMmZNdXMzSWI0U0ViRWJvOW8KM294bEwxcDJocW9PM3I3a3NBZkp0YlJwcWk4cnI0clIvN3RvV280S1FiWjUwa2phMUp6T3cxWUJ5cUttMmRzbQorTDZDbHVnSFViQ1ZnRDVhd1d1V2p4aFdPQk12blRHMHBpTTlveHQ0UXJIN3p6THg0SGd4VnJFVUpBSThUeW5BCkdJVm1wTjI1OU5KSE5rc040ZFFTZVAxeEY3dDJ4OGozdThSU3BZRytnS1hIUFFJREFRQUJveU13SVRBT0JnTlYKSFE4QkFmOEVCQU1DQWdRd0R3WURWUjBUQVFIL0JBVXdBd0VCL3pBTkJna3Foa2lHOXcwQkFRc0ZBQU9DQVFFQQpoU29xdEVqMzFFakhyQWNpSFV4VDUxU1gySFNMVWFlVk9tV216RzBTSGlQRHlwUlJqblpsOWkwbVlUbFJxM09YCjR1bVBrUjZZMmhUUkdYUkhLRjVPUnBTdDdOL0lCV0l0SW9iQm1GemhIL2F6RUIvZUt2MWttOVZtb25IN3hUbngKZWRFTVZMZTBEQlh4NUxXNFlQc1BIQ0tXVzlneG9GVWpLT0NqeExJU090SVlYVjBLV05kRHNuNzVVQi9ickxlaApGL1lxQlR0MDVlNTBJUlNPNzNscXoyOHd4RXZzeGV0UDUwOXRaT0ZZSy8weXVjeVJYRWFVYVVCd0RXMUtuNU1xCnhOaitnSm5xcFA3S0F0QWQ3MEpSclBSa1pKek02RUhpenp4VVZYaDhxbGpTWnYxaTM2TjNRTm5tblpSK0tSUGIKRXovbXM2b25XUzMvbjdPbk1KSWsydz09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+      service:
+        name: mutateme
+        namespace: kubeflow-workflow-ttl
+        path: "/mutate"
+    rules:
+      - operations: ["CREATE"]
+        apiGroups: ["argoproj.io"]
+        apiVersions: ["v1alpha1"]
+        resources: ["workflows"]
+    # The webhook will act on all namspaces which have the following matchLabels, set on the namespace.  
+    namespaceSelector:
+      matchLabels:
+        mutateme: enabled

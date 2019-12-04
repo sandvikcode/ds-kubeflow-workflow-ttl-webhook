@@ -1,0 +1,7 @@
+# Ignore all certificates and keys
+*.pem
+*.crt
+*.cert
+*.key
+*.csr
+csr.conf

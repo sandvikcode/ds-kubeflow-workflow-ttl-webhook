@@ -15,8 +15,6 @@ RUN go get github.com/argoproj/argo/pkg/apis/workflow/v1alpha1
 RUN go get k8s.io/apimachinery/pkg/apis/meta/v1
 RUN go get github.com/stretchr/testify/assert
 
-RUN ls
-RUN pwd
 # To jump to intermiddate stages in the build to debug 
 # docker run -it --rm 29b94b0299a8 sh
 RUN go test -v ./... -cover

@@ -59,7 +59,7 @@ func Mutate(body []byte) ([]byte, error) {
 			patch := map[string]interface{}{
 				"op":    "add",
 				"path":  fmt.Sprintf("/spec/ttlSecondsAfterFinished"),
-				"value": 60 * 20 * 30,
+				"value": 60 * 60 * 10,
 			}
 			p = append(p, patch)
 		} else {
@@ -68,7 +68,7 @@ func Mutate(body []byte) ([]byte, error) {
 				patch := map[string]interface{}{
 					"op":    "replace",
 					"path":  fmt.Sprintf("/spec/ttlSecondsAfterFinished"),
-					"value": 60 * 20 * 30,
+					"value": 60 * 60 * 10,
 				}
 				p = append(p, patch)
 			}

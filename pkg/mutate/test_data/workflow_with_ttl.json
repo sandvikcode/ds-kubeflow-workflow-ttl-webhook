@@ -1,0 +1,706 @@
+{
+    "kind": "AdmissionReview",
+    "apiVersion": "admission.k8s.io/v1beta1",
+    "request": {
+        "uid": "7f0b2891-916f-4ed6-b7cd-27bff1815a8c",
+        "kind": {
+            "group": "",
+            "version": "v1",
+            "kind": "Pod"
+        },
+        "resource": {
+            "group": "",
+            "version": "v1",
+            "resource": "pods"
+        },
+        "requestKind": {
+            "group": "",
+            "version": "v1",
+            "kind": "Pod"
+        },
+        "requestResource": {
+            "group": "",
+            "version": "v1",
+            "resource": "pods"
+        },
+        "namespace": "yolo",
+        "operation": "CREATE",
+        "userInfo": {
+            "username": "kubernetes-admin",
+            "groups": [
+                "system:masters",
+                "system:authenticated"
+            ]
+        },
+        "object": {
+            "apiVersion": "argoproj.io/v1alpha1",
+            "kind": "Workflow",
+            "metadata": {
+                "creationTimestamp": "2019-11-30T09:00:01Z",
+                "generation": 5,
+                "labels": {
+                    "pipeline/persistedFinalState": "true",
+                    "pipeline/runid": "b5522a9e-b181-497c-9d49-473a4f6cdcd7",
+                    "scheduledworkflows.kubeflow.org/isOwnedByScheduledWorkflow": "true",
+                    "scheduledworkflows.kubeflow.org/scheduledWorkflowName": "myrundailyrunhwn89",
+                    "scheduledworkflows.kubeflow.org/workflowEpoch": "1575104400",
+                    "scheduledworkflows.kubeflow.org/workflowIndex": "3",
+                    "workflows.argoproj.io/completed": "true",
+                    "workflows.argoproj.io/phase": "Failed"
+                },
+                "name": "myrundailyrunhwn89-3-3509392613",
+                "namespace": "kubeflow",
+                "ownerReferences": [
+                    {
+                        "apiVersion": "kubeflow.org/v1beta1",
+                        "blockOwnerDeletion": true,
+                        "controller": true,
+                        "kind": "ScheduledWorkflow",
+                        "name": "myrundailyrunhwn89",
+                        "uid": "bf28c1fb-10f7-11ea-a12d-42010a4c1005"
+                    }
+                ],
+                "resourceVersion": "7360201",
+                "selfLink": "/apis/argoproj.io/v1alpha1/namespaces/kubeflow/workflows/myrundailyrunhwn89-3-3509392613",
+                "uid": "cb09d71e-134f-11ea-a12d-42010a4c1005"
+            },
+            "spec": {
+                "arguments": {
+                    "parameters": [
+                        {
+                            "name": "preprocessing-blob-name",
+                            "value": "data/preprocessing/input.csv"
+                        },
+                        {
+                            "name": "train-features-blob-name",
+                            "value": "train.csv"
+                        },
+                        {
+                            "name": "prediction-features-blob-name",
+                            "value": "prediction.csv"
+                        },
+                        {
+                            "name": "bucket",
+                            "value": "company_production"
+                        },
+                        {
+                            "name": "r-prediction-blob-name",
+                            "value": "prediction_r.csv"
+                        },
+                        {
+                            "name": "prophet-prediction-blob-name",
+                            "value": "prediction_prophet.csv"
+                        },
+                        {
+                            "name": "ensamble-output",
+                            "value": "output.csv"
+                        }
+                    ]
+                },
+                "entrypoint": "company-machine-learning-prediction",
+                "serviceAccountName": "pipeline-runner",
+                "templates": [
+                    {
+                        "container": {
+                            "args": [
+                                "--vanilla",
+                                "main.R",
+                                "-i",
+                                "{{inputs.parameters.preprocessing-blob-name}}",
+                                "-l",
+                                "tmp.csv",
+                                "-t",
+                                "{{inputs.parameters.train-features-blob-name}}",
+                                "-f",
+                                "{{inputs.parameters.prediction-features-blob-name}}",
+                                "-b",
+                                "{{inputs.parameters.bucket}}"
+                            ],
+                            "command": [
+                                "Rscript"
+                            ],
+                            "env": [
+                                {
+                                    "name": "GOOGLE_APPLICATION_CREDENTIALS",
+                                    "value": "/secret/gcp-credentials/user-gcp-sa.json"
+                                },
+                                {
+                                    "name": "CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE",
+                                    "value": "/secret/gcp-credentials/user-gcp-sa.json"
+                                }
+                            ],
+                            "image": "gcr.io/ds-production-259110/feature-generation-prediction",
+                            "imagePullPolicy": "Always",
+                            "name": "",
+                            "resources": {},
+                            "volumeMounts": [
+                                {
+                                    "mountPath": "/secret/gcp-credentials",
+                                    "name": "gcp-credentials-user-gcp-sa"
+                                }
+                            ]
+                        },
+                        "inputs": {
+                            "parameters": [
+                                {
+                                    "name": "bucket"
+                                },
+                                {
+                                    "name": "prediction-features-blob-name"
+                                },
+                                {
+                                    "name": "preprocessing-blob-name"
+                                },
+                                {
+                                    "name": "train-features-blob-name"
+                                }
+                            ]
+                        },
+                        "metadata": {},
+                        "name": "feature-generation",
+                        "outputs": {},
+                        "volumes": [
+                            {
+                                "name": "gcp-credentials-user-gcp-sa",
+                                "secret": {
+                                    "secretName": "user-gcp-sa"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "container": {
+                            "args": [
+                                "post_processing.py",
+                                "--linearmodelrpredictions",
+                                "{{inputs.parameters.r-prediction-blob-name}}",
+                                "--linearmodelprophetpredictions",
+                                "{{inputs.parameters.prophet-prediction-blob-name}}",
+                                "--localfilenamelinear",
+                                "tmp_linear.csv",
+                                "--localfilenameprophet",
+                                "tmp_prophet.csv",
+                                "--localoutputfilename",
+                                "{{inputs.parameters.ensamble-output}}",
+                                "--bucket",
+                                "{{inputs.parameters.bucket}}",
+                                "--secret_name",
+                                "database",
+                                "--secret_path",
+                                "/secret/test-credentials"
+                            ],
+                            "command": [
+                                "python3"
+                            ],
+                            "env": [
+                                {
+                                    "name": "GOOGLE_APPLICATION_CREDENTIALS",
+                                    "value": "/secret/gcp-credentials/user-gcp-sa.json"
+                                },
+                                {
+                                    "name": "CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE",
+                                    "value": "/secret/gcp-credentials/user-gcp-sa.json"
+                                }
+                            ],
+                            "image": "gcr.io/ds-production-259110/postprocessing-prediction",
+                            "imagePullPolicy": "Always",
+                            "name": "",
+                            "resources": {},
+                            "volumeMounts": [
+                                {
+                                    "mountPath": "/secret/test-credentials",
+                                    "name": "mysecretvolume"
+                                },
+                                {
+                                    "mountPath": "/secret/gcp-credentials",
+                                    "name": "gcp-credentials-user-gcp-sa"
+                                }
+                            ]
+                        },
+                        "inputs": {
+                            "parameters": [
+                                {
+                                    "name": "bucket"
+                                },
+                                {
+                                    "name": "ensamble-output"
+                                },
+                                {
+                                    "name": "prophet-prediction-blob-name"
+                                },
+                                {
+                                    "name": "r-prediction-blob-name"
+                                }
+                            ]
+                        },
+                        "metadata": {},
+                        "name": "post-processing-image",
+                        "outputs": {},
+                        "volumes": [
+                            {
+                                "name": "gcp-credentials-user-gcp-sa",
+                                "secret": {
+                                    "secretName": "user-gcp-sa"
+                                }
+                            },
+                            {
+                                "name": "mysecretvolume",
+                                "secret": {
+                                    "secretName": "database"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "container": {
+                            "args": [
+                                "main.py",
+                                "--bucket",
+                                "{{inputs.parameters.bucket}}",
+                                "--destination_blob_name",
+                                "{{inputs.parameters.preprocessing-blob-name}}",
+                                "--localfilename",
+                                "tmp.csv",
+                                "--secret_name",
+                                "database",
+                                "--secret_path",
+                                "/secret/test-credentials"
+                            ],
+                            "command": [
+                                "python3"
+                            ],
+                            "env": [
+                                {
+                                    "name": "GOOGLE_APPLICATION_CREDENTIALS",
+                                    "value": "/secret/gcp-credentials/user-gcp-sa.json"
+                                },
+                                {
+                                    "name": "CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE",
+                                    "value": "/secret/gcp-credentials/user-gcp-sa.json"
+                                }
+                            ],
+                            "image": "gcr.io/ds-production-259110/preprocessing-prediction",
+                            "imagePullPolicy": "Always",
+                            "name": "",
+                            "resources": {},
+                            "volumeMounts": [
+                                {
+                                    "mountPath": "/secret/test-credentials",
+                                    "name": "mysecretvolume"
+                                },
+                                {
+                                    "mountPath": "/secret/gcp-credentials",
+                                    "name": "gcp-credentials-user-gcp-sa"
+                                }
+                            ]
+                        },
+                        "inputs": {
+                            "parameters": [
+                                {
+                                    "name": "bucket"
+                                },
+                                {
+                                    "name": "preprocessing-blob-name"
+                                }
+                            ]
+                        },
+                        "metadata": {},
+                        "name": "preprocess",
+                        "outputs": {},
+                        "volumes": [
+                            {
+                                "name": "gcp-credentials-user-gcp-sa",
+                                "secret": {
+                                    "secretName": "user-gcp-sa"
+                                }
+                            },
+                            {
+                                "name": "mysecretvolume",
+                                "secret": {
+                                    "secretName": "database"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "dag": {
+                            "tasks": [
+                                {
+                                    "arguments": {
+                                        "parameters": [
+                                            {
+                                                "name": "bucket",
+                                                "value": "{{inputs.parameters.bucket}}"
+                                            },
+                                            {
+                                                "name": "prediction-features-blob-name",
+                                                "value": "{{inputs.parameters.prediction-features-blob-name}}"
+                                            },
+                                            {
+                                                "name": "preprocessing-blob-name",
+                                                "value": "{{inputs.parameters.preprocessing-blob-name}}"
+                                            },
+                                            {
+                                                "name": "train-features-blob-name",
+                                                "value": "{{inputs.parameters.train-features-blob-name}}"
+                                            }
+                                        ]
+                                    },
+                                    "dependencies": [
+                                        "preprocess"
+                                    ],
+                                    "name": "feature-generation",
+                                    "template": "feature-generation"
+                                },
+                                {
+                                    "arguments": {
+                                        "parameters": [
+                                            {
+                                                "name": "bucket",
+                                                "value": "{{inputs.parameters.bucket}}"
+                                            },
+                                            {
+                                                "name": "ensamble-output",
+                                                "value": "{{inputs.parameters.ensamble-output}}"
+                                            },
+                                            {
+                                                "name": "prophet-prediction-blob-name",
+                                                "value": "{{inputs.parameters.prophet-prediction-blob-name}}"
+                                            },
+                                            {
+                                                "name": "r-prediction-blob-name",
+                                                "value": "{{inputs.parameters.r-prediction-blob-name}}"
+                                            }
+                                        ]
+                                    },
+                                    "dependencies": [
+                                        "train-predict-using-propeht-model",
+                                        "train-r-linear-model"
+                                    ],
+                                    "name": "post-processing-image",
+                                    "template": "post-processing-image"
+                                },
+                                {
+                                    "arguments": {
+                                        "parameters": [
+                                            {
+                                                "name": "bucket",
+                                                "value": "{{inputs.parameters.bucket}}"
+                                            },
+                                            {
+                                                "name": "preprocessing-blob-name",
+                                                "value": "{{inputs.parameters.preprocessing-blob-name}}"
+                                            }
+                                        ]
+                                    },
+                                    "name": "preprocess",
+                                    "template": "preprocess"
+                                },
+                                {
+                                    "arguments": {
+                                        "parameters": [
+                                            {
+                                                "name": "bucket",
+                                                "value": "{{inputs.parameters.bucket}}"
+                                            },
+                                            {
+                                                "name": "prediction-features-blob-name",
+                                                "value": "{{inputs.parameters.prediction-features-blob-name}}"
+                                            },
+                                            {
+                                                "name": "prophet-prediction-blob-name",
+                                                "value": "{{inputs.parameters.prophet-prediction-blob-name}}"
+                                            },
+                                            {
+                                                "name": "train-features-blob-name",
+                                                "value": "{{inputs.parameters.train-features-blob-name}}"
+                                            }
+                                        ]
+                                    },
+                                    "dependencies": [
+                                        "feature-generation"
+                                    ],
+                                    "name": "train-predict-using-propeht-model",
+                                    "template": "train-predict-using-propeht-model"
+                                },
+                                {
+                                    "arguments": {
+                                        "parameters": [
+                                            {
+                                                "name": "bucket",
+                                                "value": "{{inputs.parameters.bucket}}"
+                                            },
+                                            {
+                                                "name": "prediction-features-blob-name",
+                                                "value": "{{inputs.parameters.prediction-features-blob-name}}"
+                                            },
+                                            {
+                                                "name": "r-prediction-blob-name",
+                                                "value": "{{inputs.parameters.r-prediction-blob-name}}"
+                                            },
+                                            {
+                                                "name": "train-features-blob-name",
+                                                "value": "{{inputs.parameters.train-features-blob-name}}"
+                                            }
+                                        ]
+                                    },
+                                    "dependencies": [
+                                        "feature-generation"
+                                    ],
+                                    "name": "train-r-linear-model",
+                                    "template": "train-r-linear-model"
+                                }
+                            ]
+                        },
+                        "inputs": {
+                            "parameters": [
+                                {
+                                    "name": "bucket"
+                                },
+                                {
+                                    "name": "ensamble-output"
+                                },
+                                {
+                                    "name": "prediction-features-blob-name"
+                                },
+                                {
+                                    "name": "preprocessing-blob-name"
+                                },
+                                {
+                                    "name": "prophet-prediction-blob-name"
+                                },
+                                {
+                                    "name": "r-prediction-blob-name"
+                                },
+                                {
+                                    "name": "train-features-blob-name"
+                                }
+                            ]
+                        },
+                        "metadata": {},
+                        "name": "company-machine-learning-prediction",
+                        "outputs": {}
+                    },
+                    {
+                        "container": {
+                            "args": [
+                                "main.py",
+                                "--modelpath",
+                                ".",
+                                "--inputtrain",
+                                "{{inputs.parameters.train-features-blob-name}}",
+                                "--inputprediction",
+                                "{{inputs.parameters.prediction-features-blob-name}}",
+                                "--localfilename",
+                                "tmp.csv",
+                                "--bucket",
+                                "{{inputs.parameters.bucket}}",
+                                "--outputprediction",
+                                "{{inputs.parameters.prophet-prediction-blob-name}}"
+                            ],
+                            "command": [
+                                "python3"
+                            ],
+                            "env": [
+                                {
+                                    "name": "GOOGLE_APPLICATION_CREDENTIALS",
+                                    "value": "/secret/gcp-credentials/user-gcp-sa.json"
+                                },
+                                {
+                                    "name": "CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE",
+                                    "value": "/secret/gcp-credentials/user-gcp-sa.json"
+                                }
+                            ],
+                            "image": "gcr.io/ds-production-259110/train-predict-python-prediction",
+                            "imagePullPolicy": "Always",
+                            "name": "",
+                            "resources": {},
+                            "volumeMounts": [
+                                {
+                                    "mountPath": "/secret/gcp-credentials",
+                                    "name": "gcp-credentials-user-gcp-sa"
+                                }
+                            ]
+                        },
+                        "inputs": {
+                            "parameters": [
+                                {
+                                    "name": "bucket"
+                                },
+                                {
+                                    "name": "prediction-features-blob-name"
+                                },
+                                {
+                                    "name": "prophet-prediction-blob-name"
+                                },
+                                {
+                                    "name": "train-features-blob-name"
+                                }
+                            ]
+                        },
+                        "metadata": {},
+                        "name": "train-predict-using-propeht-model",
+                        "outputs": {},
+                        "volumes": [
+                            {
+                                "name": "gcp-credentials-user-gcp-sa",
+                                "secret": {
+                                    "secretName": "user-gcp-sa"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "container": {
+                            "args": [
+                                "--vanilla",
+                                "main.R",
+                                "-t",
+                                "{{inputs.parameters.train-features-blob-name}}",
+                                "-f",
+                                "{{inputs.parameters.prediction-features-blob-name}}",
+                                "-l",
+                                "tmp_train.csv",
+                                "-k",
+                                "tmp_prediction.csv",
+                                "-j",
+                                "tmp_output.csv",
+                                "-o",
+                                "{{inputs.parameters.r-prediction-blob-name}}",
+                                "-b",
+                                "{{inputs.parameters.bucket}}"
+                            ],
+                            "command": [
+                                "Rscript"
+                            ],
+                            "env": [
+                                {
+                                    "name": "GOOGLE_APPLICATION_CREDENTIALS",
+                                    "value": "/secret/gcp-credentials/user-gcp-sa.json"
+                                },
+                                {
+                                    "name": "CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE",
+                                    "value": "/secret/gcp-credentials/user-gcp-sa.json"
+                                }
+                            ],
+                            "image": "gcr.io/ds-production-259110/train-predict-r-prediction",
+                            "imagePullPolicy": "Always",
+                            "name": "",
+                            "resources": {},
+                            "volumeMounts": [
+                                {
+                                    "mountPath": "/secret/gcp-credentials",
+                                    "name": "gcp-credentials-user-gcp-sa"
+                                }
+                            ]
+                        },
+                        "inputs": {
+                            "parameters": [
+                                {
+                                    "name": "bucket"
+                                },
+                                {
+                                    "name": "prediction-features-blob-name"
+                                },
+                                {
+                                    "name": "r-prediction-blob-name"
+                                },
+                                {
+                                    "name": "train-features-blob-name"
+                                }
+                            ]
+                        },
+                        "metadata": {},
+                        "name": "train-r-linear-model",
+                        "outputs": {},
+                        "volumes": [
+                            {
+                                "name": "gcp-credentials-user-gcp-sa",
+                                "secret": {
+                                    "secretName": "user-gcp-sa"
+                                }
+                            }
+                        ]
+                    }
+                ],
+                "ttlSecondsAfterFinished": 1000
+            },
+            "status": {
+                "finishedAt": "2019-11-30T09:00:17Z",
+                "nodes": {
+                    "myrundailyrunhwn89-3-3509392613": {
+                        "children": [
+                            "myrundailyrunhwn89-3-3509392613-884332321"
+                        ],
+                        "displayName": "myrundailyrunhwn89-3-3509392613",
+                        "finishedAt": "2019-11-30T09:00:17Z",
+                        "id": "myrundailyrunhwn89-3-3509392613",
+                        "inputs": {
+                            "parameters": [
+                                {
+                                    "name": "bucket",
+                                    "value": "company_production"
+                                },
+                                {
+                                    "name": "ensamble-output",
+                                    "value": "output.csv"
+                                },
+                                {
+                                    "name": "prediction-features-blob-name",
+                                    "value": "prediction.csv"
+                                },
+                                {
+                                    "name": "preprocessing-blob-name",
+                                    "value": "data/preprocessing/input.csv"
+                                },
+                                {
+                                    "name": "prophet-prediction-blob-name",
+                                    "value": "prediction_prophet.csv"
+                                },
+                                {
+                                    "name": "r-prediction-blob-name",
+                                    "value": "prediction_r.csv"
+                                },
+                                {
+                                    "name": "train-features-blob-name",
+                                    "value": "train.csv"
+                                }
+                            ]
+                        },
+                        "name": "myrundailyrunhwn89-3-3509392613",
+                        "phase": "Failed",
+                        "startedAt": "2019-11-30T09:00:01Z",
+                        "templateName": "company-machine-learning-prediction",
+                        "type": "DAG"
+                    },
+                    "myrundailyrunhwn89-3-3509392613-884332321": {
+                        "boundaryID": "myrundailyrunhwn89-3-3509392613",
+                        "displayName": "preprocess",
+                        "finishedAt": "2019-11-30T09:00:16Z",
+                        "id": "myrundailyrunhwn89-3-3509392613-884332321",
+                        "inputs": {
+                            "parameters": [
+                                {
+                                    "name": "bucket",
+                                    "value": "company_production"
+                                },
+                                {
+                                    "name": "preprocessing-blob-name",
+                                    "value": "data/preprocessing/input.csv"
+                                }
+                            ]
+                        },
+                        "message": "failed with exit code 1",
+                        "name": "myrundailyrunhwn89-3-3509392613.preprocess",
+                        "phase": "Failed",
+                        "startedAt": "2019-11-30T09:00:02Z",
+                        "templateName": "preprocess",
+                        "type": "Pod"
+                    }
+                },
+                "phase": "Failed",
+                "startedAt": "2019-11-30T09:00:01Z"
+            }
+        }
+    }
+}

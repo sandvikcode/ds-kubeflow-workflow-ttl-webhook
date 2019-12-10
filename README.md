@@ -1,6 +1,10 @@
 # Mutating admission webhook 
 
-This README will go through how to build and deploy the mutating admission webhook for argo. The goal with this project is to add the timetolive for the pods that are part of a argo workflow. The argo workflow is part of kubeflow deployment. 
+## What 
+This README will go through how to build and deploy a mutating admission webhook for argo workflows. 
+
+## Why 
+Maintaining kubeflow deployments it is annoying that workflows(part of [kubeflow pipelines](https://github.com/kubeflow/pipelines)) are not cleand up. This can be handled by setting the ttlSecondsAfterFinished for pipeline in the Kubeflow sdk. However users foreget about this and result in extra maintance. In order to solve this a mutating webhook that works with [argo worfklow](https://argoproj.github.io/argo/) CRD:s is build. Cases with missing ttlSecondsAfterFinished and cases where the ttlSecondsAfterFinished is to large accoring to the configurations are handled.
 
 ```
 k8s-kubeflow-mutate-webhook
